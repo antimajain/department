@@ -1,0 +1,32 @@
+pipeline {
+    agent any
+    tools {
+        maven 'maven'
+        dockerTool 'docker'
+    }
+    stages {
+        stage('Build maven') {
+            steps {
+                checkout([$class: 'GitSCM', branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/antimajain/department']]])
+                sh 'mvn clean install'
+            }
+        }
+        stage('Build docker image') {
+            steps {
+                script{
+                    sh 'docker build -t antima11/department .'
+                }
+            }
+        }
+        stage('push docker image maven') {
+            steps {
+                script{
+                    withCredentials([string(credentialsId: 'dockerhubpwd', variable: 'dockerhubpwd')]) {
+                    sh 'docker login -u antima11 -p ${dockerhubpwd}'
+                    sh 'docker push antima11/department'
+                }
+            }
+        }
+        }
+    }
+}
